@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dromara.tunnelenvironmentmonitor.mapper.EnvAlarmMapper">
+
+    <select id="selectAlarmValueList" resultType="org.dromara.tunnelenvironmentmonitor.domain.vo.TUnitGasAlarmlVo">
+        SELECT t.WarningContent,t.StartTime, p.pro_abbreviation AS proName, pi.F_TunnelName AS unitName
+        FROM t_unit_warning t
+        LEFT JOIN t_project p ON t.ProjCode = p.ProjCode
+        LEFT JOIN pcms_tunnel_base_information pi ON t.UnitCode = pi.F_TunnelCode
+        WHERE (DATE(t.StartTime) = CURDATE() OR DATE(t.LastModificationTime) = CURDATE())
+        <if test="projectCode != null and projectCode != ''">
+            AND t.ProjCode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND t.UnitCode = #{unitCode}
+        </if>
+        ORDER BY t.StartTime DESC
+    </select>
+
+</mapper>

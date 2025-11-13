@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dromara.tunnelintelligentconstruction.mapper.LargeScaleMachineryMapper">
+
+    <select id="selectLargeScaleMachineryList" resultType="org.dromara.tunnelintelligentconstruction.domain.vo.LargeScaleMachineryVo">
+        SELECT t.`Name`,t.`Status`,t.`DeviceSn`,t.`Direction`,t.`CoordinateX` as coordinatex,t.`CoordinateY` as  coordinatey,t.`CoordinateZ` as coordinatez,t.`PileNo`,t.`CarsCardNo`,p.pro_abbreviation AS peojectname, pi.F_TunnelName AS unitname,
+        CASE WHEN ts.Status = 0 THEN NULL WHEN ts.Status = 1 THEN TIMESTAMPDIFF(SECOND, ts.CreationTime, NOW()) END AS RunDuration
+        FROM t_large_scale_machinery t
+        LEFT JOIN (
+        SELECT DISTINCT ts1.DeviceSn,ts1.Status,ts1.CreationTime
+        FROM t_large_scale_machinery_status ts1
+        INNER JOIN (
+        SELECT DeviceSn,MAX(CreationTime) AS MaxTime
+        FROM t_large_scale_machinery_status
+        GROUP BY DeviceSn
+        ) ts2 ON ts1.DeviceSn = ts2.DeviceSn
+        AND ts1.CreationTime = ts2.MaxTime
+        ) ts ON t.DeviceSn = ts.DeviceSn
+        LEFT JOIN t_project p ON t.ProjCode = p.ProjCode
+        LEFT JOIN pcms_tunnel_base_information pi ON t.UnitCode = pi.F_TunnelCode
+        <where>
+        <if test="projectCode != null and projectCode != ''">
+             t.projcode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND t.unitcode = #{unitCode}
+        </if>
+        </where>
+    </select>
+
+    <select id="selectLargeScaleMachineryDataList" resultType="org.dromara.tunnelintelligentconstruction.domain.vo.LargeScaleMachineryDataVo">
+        SELECT
+            m.`Name` as name,
+            m.PileNo as pileno ,
+            m.DeviceSn as devicesn,
+            d.MetricKey as metrickey ,
+            d.MetricValue as metricvalue,
+            m.LeftLowWater as leftwataertankStatus,
+            m.RightLowWater as rightwataertankStatus,
+            CASE
+                WHEN w.Status = 0 THEN '养护中'
+                WHEN w.Status = 1 THEN '停止养护'
+                ELSE '未知状态'
+                END AS 'dollystate',
+            CASE
+                WHEN w.Status = 0 THEN TIMESTAMPDIFF(SECOND, w.TimesTamp, NOW())
+                ELSE 0
+                END AS 'workingtime',
+            d.CreationTime,
+            d.Id
+        FROM
+            t_large_scale_machinery m
+                JOIN
+            (
+                SELECT d1.*
+                FROM t_large_scale_machinery_data d1
+                         INNER JOIN (
+                    SELECT MetricKey, MAX(CreationTime) AS LatestTime
+                    FROM t_large_scale_machinery_data
+                    WHERE DeviceSn = #{deviceSn}
+                    GROUP BY MetricKey
+                ) d2 ON d1.MetricKey = d2.MetricKey AND d1.CreationTime = d2.LatestTime
+            ) d ON m.DeviceSn = d.DeviceSn
+                LEFT JOIN
+            (
+                SELECT w1.*
+                FROM t_large_scale_machinery_worktime w1
+                         INNER JOIN (
+                    SELECT DeviceSn, MAX(CreationTime) AS LatestWorkTime
+                    FROM t_large_scale_machinery_worktime
+                    WHERE DeviceSn = #{deviceSn}
+                    GROUP BY DeviceSn
+                ) w2 ON w1.DeviceSn = w2.DeviceSn AND w1.CreationTime = w2.LatestWorkTime
+            ) w ON m.DeviceSn = w.DeviceSn
+        Where m.Status = '1'
+        ORDER BY d.Id
+    </select>
+
+</mapper>

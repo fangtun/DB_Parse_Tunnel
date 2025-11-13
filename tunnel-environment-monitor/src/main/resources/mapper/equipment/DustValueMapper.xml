@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dromara.tunnelenvironmentmonitor.mapper.DustValueMapper">
+
+    <select id="selecDustNowValuetList" resultType="org.dromara.tunnelenvironmentmonitor.domain.DustValueData">
+        SELECT DustType, concentration, CreationTime AS DateTimes
+        FROM t_env_equipment
+        WHERE (DustType, CreationTime) IN (
+        SELECT DustType, MAX(CreationTime)
+        FROM t_env_equipment
+        WHERE DustType IN (0,1) AND DATE(CreationTime) = CURDATE()
+        GROUP BY DustType
+        )
+        <if test="projectCode != null and projectCode != ''">
+            AND ProjCode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND UnitCode = #{unitCode}
+        </if>
+        <if test="deviceSn != null and deviceSn != ''">
+            AND DeviceSn = #{deviceSn}
+        </if>
+    </select>
+
+    <select id="selecDustDayAvgValuetList" resultType="org.dromara.tunnelenvironmentmonitor.domain.DustValueData">
+        SELECT DustType, AVG(concentration) AS concentration, CreationTime AS DateTimes
+        FROM t_env_equipment
+        WHERE DustType IN (0,1) AND DATE(CreationTime) = CURDATE()
+        <if test="projectCode != null and projectCode != ''">
+            AND  ProjCode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND UnitCode = #{unitCode}
+        </if>
+        <if test="deviceSn != null and deviceSn != ''">
+            AND DeviceSn = #{deviceSn}
+        </if>
+        GROUP BY DustType
+    </select>
+
+    <select id="selecDustWeekAvgValuetList" resultType="org.dromara.tunnelenvironmentmonitor.domain.DustValueData">
+        SELECT DustType, ROUND(AVG(concentration), 1) AS concentration, DATE(CreationTime) AS DateTimes
+        FROM t_env_equipment
+        WHERE DustType IN (0,1)
+        AND DATE(CreationTime) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        <if test="projectCode != null and projectCode != ''">
+            AND  ProjCode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND UnitCode = #{unitCode}
+        </if>
+        <if test="deviceSn != null and deviceSn != ''">
+            AND DeviceSn = #{deviceSn}
+        </if>
+        GROUP BY DateTimes, DustType
+        ORDER BY DateTimes ASC;
+    </select>
+
+</mapper>

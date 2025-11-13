@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dromara.tunnelenvironmentmonitor.mapper.EnvionmentMonitorMapper">
+
+    <select id="selectDeviceList" resultType="org.dromara.tunnelenvironmentmonitor.domain.TEnvEquipment">
+        SELECT t.*, te.Lon AS DeviceLon, te.Lat AS DeviceLat
+        FROM t_env_equipment t
+        LEFT JOIN t_equipment te ON t.DeviceSn = te.DeviceSn
+        WHERE DATE(t.CreationTime) = CURRENT_DATE()
+        AND t.id IN (
+        SELECT MAX(id)
+        FROM t_env_equipment
+        WHERE DATE(CreationTime) = CURRENT_DATE()
+        GROUP BY DeviceCode
+        )
+        <if test="projectCode != null and projectCode != ''">
+            AND t.projcode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND t.unitcode = #{unitCode}
+        </if>
+    </select>
+
+    <select id="selectDeviceValueList" resultType="org.dromara.tunnelenvironmentmonitor.domain.vo.TEnvEquipmentValueVo">
+        SELECT CreationTime AS dates,DATE(CreationTime) AS dates,Direction,GasType,AVG(Concentration) AS Concentration,DeviceSn,RegionName
+        FROM t_env_equipment t
+        WHERE DATE(t.CreationTime) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+          AND GasType IN (0, 1, 2, 3)
+        <if test="projectCode != null and projectCode != ''">
+            AND t.projcode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND t.unitcode = #{unitCode}
+        </if>
+        <if test="deviceSn != null and deviceSn != ''">
+            AND t.devicesn = #{deviceSn}
+        </if>
+        <if test="gasType != null and gasType != ''">
+            AND t.gastype = #{gasType}
+        </if>
+        GROUP BY DeviceSn,DATE(dates), Direction, GasType
+        ORDER BY DeviceSn,GasType, dates,Direction
+    </select>
+
+    <select id="selectDeviceValueHourList" resultType="org.dromara.tunnelenvironmentmonitor.domain.vo.TEnvEquipmentValueVo">
+        SELECT CreationTime AS dates,Direction,GasType,Concentration,DeviceSn,RegionName,LowThreshold,HighThreshold
+        FROM t_env_equipment t
+        WHERE t.CreationTime >= (NOW() - INTERVAL 1 HOUR )
+        AND GasType IN (0, 1, 2, 3)
+        <if test="projectCode != null and projectCode != ''">
+            AND t.projcode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND t.unitcode = #{unitCode}
+        </if>
+        <if test="deviceSn != null and deviceSn != ''">
+            AND t.devicesn = #{deviceSn}
+        </if>
+        <if test="gasType != null and gasType != ''">
+            AND t.gastype = #{gasType}
+        </if>
+    </select>
+
+    <update id="updateLargeLocation">
+        UPDATE t_large_scale_machinery
+        SET Direction = #{direction},
+            CoordinateX = #{coordinatex},
+            CoordinateY = #{coordinatey},
+            CoordinateZ = #{coordinatez},
+            PileNo = #{pileNo},
+            LastModificationTime = NOW()
+        WHERE CarsCardNo = #{trolleyId}
+    </update>
+
+</mapper>

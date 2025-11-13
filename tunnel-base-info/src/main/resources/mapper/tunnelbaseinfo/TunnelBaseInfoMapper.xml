@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dromara.tunnelbaseinfo.mapper.TunnelBaseInfoMapper">
+
+    <select id="selectTunnelBaseInfo" resultType="org.dromara.tunnelbaseinfo.domain.PcmsTunnelBaseInformation">
+        SELECT p.*, pil.F_Length AS leftLength, pir.F_Length AS rightLength
+        FROM pcms_tunnel_base_information p
+        LEFT JOIN pcms_tunnel_base_information_detail pil ON p.F_Id = pil.F_UnitId and  pil.F_Direction = 1
+        LEFT JOIN pcms_tunnel_base_information_detail pir ON p.F_Id = pir.F_UnitId and  pir.F_Direction = 2
+        <where>
+            <if test="projectCode != null and projectCode != ''">
+                p.F_ProjectCode = #{projectCode}
+            </if>
+            <if test="unitCode != null and unitCode != ''">
+                AND p.F_TunnelCode = #{unitCode}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectTunnelOverviewInfo" resultType="org.dromara.tunnelbaseinfo.domain.PcmsTunnelBaseInformation">
+        SELECT
+        COUNT(DISTINCT p.F_Id) AS total,
+        ROUND(SUM(DISTINCT p.F_TotalInvestment) / 10000, 2) AS totalInvestment,
+        COALESCE(SUM(pi.F_Length), 0) AS totalMileage,
+        ROUND(COALESCE(SUM(mp.F_CompletedAmount)/ 100000000, 0), 2) AS completedinvestment
+        FROM pcms_tunnel_base_information p
+        LEFT JOIN (
+        SELECT
+        F_UnitId,
+        F_Length,F_OriginalId,
+        F_Id
+        FROM pcms_tunnel_base_information_detail
+        ) pi ON p.F_Id = pi.F_UnitId
+        LEFT JOIN (
+        SELECT
+        F_TunnelId,
+        F_CompletedAmount
+        FROM pcms_tunnel_metering_progress
+        WHERE F_DeleteMark IS NULL
+        ) mp ON pi.F_OriginalId = mp.F_TunnelId
+        <where>
+            <if test="projectCode != null and projectCode != ''">
+                p.F_ProjectCode = #{projectCode}
+            </if>
+            <if test="unitCode != null and unitCode != ''">
+                AND p.F_TunnelCode = #{unitCode}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="selectTunnelOverviewtotalMileageInfo" resultType="org.dromara.tunnelbaseinfo.domain.PcmsTunnelBaseInformation">
+        SELECT
+        ROUND(COALESCE(SUM(ps.F_Footage), 0), 2) AS completeMileage
+        FROM pcms_tunnel_base_information p
+        LEFT JOIN (
+        SELECT
+        F_UnitId,
+        F_Length,F_OriginalId,
+        F_Id
+        FROM pcms_tunnel_base_information_detail
+        ) pi ON p.F_Id = pi.F_UnitId
+        LEFT JOIN (
+        SELECT
+        F_TunnelId,
+        F_Footage
+        FROM pcms_tunnel_image_progress_statistics
+        WHERE F_DeleteMark IS NULL
+        ) ps ON pi.F_OriginalId = ps.F_TunnelId
+        <where>
+            <if test="projectCode != null and projectCode != ''">
+                p.F_ProjectCode = #{projectCode}
+            </if>
+            <if test="unitCode != null and unitCode != ''">
+                AND p.F_TunnelCode = #{unitCode}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectTunnelUnitList" resultType="org.dromara.tunnelbaseinfo.domain.UnitList">
+        SELECT f_tunnelcode as unitCode, f_tunnelname as unitName ,p.Lon as lon ,p.Lat as lat,t.ProjCode as projectCode FROM pcms_tunnel_base_information p LEFT JOIN t_project t on p.F_ProjectCode = t.ProjCode
+    </select>
+
+</mapper>
