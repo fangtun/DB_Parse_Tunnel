@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dromara.tunnelsecurityguarantee.mapper.SecurityGuaranteeForPersonAndCarsMapper">
+
+    <select id="personAndCarsList" resultType="org.dromara.tunnelsecurityguarantee.domain.TPersonCarsInfo">
+        SELECT t.*, p.pro_abbreviation AS peojectName, pi.F_TunnelName AS unitName
+        FROM t_person_cars_info t
+        LEFT JOIN t_project p ON t.ProjCode = p.ProjCode
+        LEFT JOIN pcms_tunnel_base_information pi ON t.UnitCode = pi.F_TunnelCode
+        WHERE DATE(t.CreationTime) = CURRENT_DATE()
+        AND t.id IN (
+        SELECT MAX(id)
+        FROM t_person_cars_info
+        WHERE DATE(CreationTime) = CURRENT_DATE()
+        GROUP BY WorkNumber
+        )
+        <if test="projectCode != null and projectCode != ''">
+            AND t.projcode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND t.unitcode = #{unitCode}
+        </if>
+    </select>
+
+</mapper>

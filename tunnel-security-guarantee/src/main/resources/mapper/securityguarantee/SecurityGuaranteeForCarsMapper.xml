@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dromara.tunnelsecurityguarantee.mapper.SecurityGuaranteeForCarsMapper">
+
+    <select id="selectCarsList" resultType="org.dromara.tunnelsecurityguarantee.domain.Carsinfo">
+        SELECT t.*, p.pro_abbreviation AS peojectName, pi.F_TunnelName AS unitName
+        FROM t_carsinfo t
+        LEFT JOIN t_project p ON t.ProjCode = p.ProjCode
+        LEFT JOIN pcms_tunnel_base_information pi ON t.UnitCode = pi.F_TunnelCode
+        WHERE DATE(t.CreationTime) = CURRENT_DATE()
+        AND t.CreationTime = (
+        SELECT MAX(CreationTime)
+        FROM t_carsinfo
+        WHERE DATE(CreationTime) = CURRENT_DATE()
+        )
+        <if test="projectCode != null and projectCode != ''">
+            AND t.projcode = #{projectCode}
+        </if>
+        <if test="unitCode != null and unitCode != ''">
+            AND t.unitcode = #{unitCode}
+        </if>
+    </select>
+
+    <update id="updateLargeLocation">
+        UPDATE t_large_scale_machinery
+        SET Direction = #{direction},
+        CoordinateX = #{coordinatex},
+        CoordinateY = #{coordinatey},
+        CoordinateZ = #{coordinatez},
+        PileNo = #{pileNo},
+        LastModificationTime = NOW()
+        WHERE CarsCardNo = #{personId}
+    </update>
+
+</mapper>

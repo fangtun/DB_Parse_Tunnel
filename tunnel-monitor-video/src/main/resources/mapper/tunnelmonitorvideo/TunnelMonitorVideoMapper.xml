@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dromara.tunnelmonitorvideo.mapper.TunnelMonitorVideoMapper">
+
+
+    <select id="getTunnelBaseInfo" resultType="org.dromara.tunnelmonitorvideo.domain.vo.TunnelBaseInfo">
+        select pro_name as projectName,F_TunnelCode as unitCode,F_TunnelName as unitName
+        from pcms_tunnel_base_information
+        left join t_project on pcms_tunnel_base_information.F_ProjectCode = t_project.ProjCode
+        where  F_TunnelCode is not null
+    </select>
+    <select id="getById" resultType="org.dromara.tunnelmonitorvideo.domain.PcmsTunnelMonitorYsyCamera">
+        select * from pcms_tunnel_monitor_ysy_camera where F_Id=#{id}
+    </select>
+    <select id="getTunnelVideoList"
+            resultType="org.dromara.tunnelmonitorvideo.domain.PcmsTunnelMonitorYsyCamera">
+        select pcms_tunnel_monitor_ysy_camera.*,pcms_tunnel_base_information.F_TunnelName from pcms_tunnel_monitor_ysy_camera
+            left join pcms_tunnel_base_information on pcms_tunnel_monitor_ysy_camera.F_UnitCode = pcms_tunnel_base_information.F_TunnelCode
+        <where>
+            pcms_tunnel_monitor_ysy_camera.F_UnitCode is not null
+            <if test="projectCode!=null and projectCode!=''">
+                and pcms_tunnel_monitor_ysy_camera.F_ProjectCode=#{projectCode}
+            </if>
+            <if test="unitCode!=null and unitCode!=''">
+                and pcms_tunnel_monitor_ysy_camera.F_UnitCode=#{unitCode}
+            </if>
+        </where>
+    </select>
+</mapper>
